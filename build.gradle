@@ -1,0 +1,26 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion '25.0.3'
+    defaultConfig {
+        minSdkVersion 15
+    }
+}
+
+dependencies {
+    compile rootProject.ext.libs.okhttp3
+    compile rootProject.ext.libs.logging_interceptor
+    // 调试工具类库
+    compile rootProject.ext.libs.stetho
+    compile rootProject.ext.libs.stetho_okhttp3
+    // json解析
+    compile rootProject.ext.libs.gson
+    // 网络请求 retrofit
+    compile rootProject.ext.libs.retrofit
+    compile rootProject.ext.libs.converter_gson
+    compile rootProject.ext.libs.adapter_rxjava2
+    // rx
+    compile rootProject.ext.libs.rxjava2
+    compile rootProject.ext.libs.rxandroid
+}
