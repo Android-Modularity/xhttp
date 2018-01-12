@@ -23,4 +23,6 @@ dependencies {
     // rx
     compile rootProject.ext.libs.rxjava2
     compile rootProject.ext.libs.rxandroid
+
+    compile project(':common')
 }

@@ -1,16 +1,11 @@
 package com.march.xhttp.interceptor;
 
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.os.Build;
-import android.support.annotation.NonNull;
 
-import java.io.IOException;
+import com.march.common.utils.NetUtils;
+import com.march.xhttp.exception.RequestException;
 
-import okhttp3.Interceptor;
 import okhttp3.Request;
-import okhttp3.Response;
 
 /**
  * CreateAt : 2017/7/1
@@ -18,7 +13,7 @@ import okhttp3.Response;
  *
  * @author chendong
  */
-public class NetWorkInterceptor implements Interceptor {
+public class NetWorkInterceptor extends AbstractInterceptor {
 
     private Context mContext;
 
@@ -26,39 +21,11 @@ public class NetWorkInterceptor implements Interceptor {
         mContext = context;
     }
 
-    private class NetWorkException extends IOException {
-        NetWorkException() {
-            super("网络未连接");
-        }
-    }
-
     @Override
-    public Response intercept(@NonNull Chain chain) throws IOException {
-        Request request = chain.request();
-        if (!isNetworkConnected()) {
-            throw new NetWorkException();
-        } else {
-            return chain.proceed(request);
+    protected Request proceedRequest(Request request) {
+        if (!NetUtils.isNetworkConnected(mContext)) {
+            throw new RequestException(RequestException.ERR_NETWORK);
         }
-    }
-
-
-    public boolean isNetworkConnected() {
-        ConnectivityManager connectivityManager =
-                (ConnectivityManager) mContext.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-            return activeNetworkInfo != null && NetworkInfo.State.CONNECTED.equals(activeNetworkInfo.getState());
-        } else {
-            NetworkInfo[] info = connectivityManager.getAllNetworkInfo();
-            if (info != null) {
-                for (NetworkInfo anInfo : info) {
-                    if (anInfo != null && anInfo.isConnected()) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return super.proceedRequest(request);
     }
 }

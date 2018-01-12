@@ -1,17 +1,15 @@
 package com.march.xhttp.interceptor;
 
-import android.support.annotation.NonNull;
-import android.util.Log;
-
-import com.babypat.extensions.retrofit.ApiRequest;
+import com.march.common.utils.LogUtils;
+import com.march.xhttp.XHttp;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
+import java.util.HashSet;
+import java.util.Set;
 
 import okhttp3.Headers;
-import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -23,146 +21,159 @@ import okio.BufferedSource;
 /**
  * CreateAt : 2017/7/1
  * Describe : 自定义日志打印拦截器，扩展自 HttpLoggingInterceptor
+ * REQ_BODY
+ * REQ_HEADERS
+ * RESP_BODY
+ * RESP_HEADERS
  *
  * @author chendong
  */
-public final class LogInterceptor implements Interceptor {
+public final class LogInterceptor extends AbstractInterceptor {
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
-    public static final  String  TAG  = LogInterceptor.class.getSimpleName();
+    private static final String TAG = LogInterceptor.class.getSimpleName();
 
-    public enum Level {
-        NONE, // 不打印
-        RESPONSE, // 只打印 response
-        REQUEST, // 只打印 request
-        BOTH //  都打印
-    }
+    public static final int REQ_BODY = 0;
+    public static final int REQ_HEADERS = 1;
+    public static final int RESP_BODY = 2;
+    public static final int RESP_HEADERS = 3;
 
-    private Level   level;
-    private boolean isLogRequestHeaders;
-    private boolean isLogResponseHeaders;
-
-    public LogInterceptor(Level level,
-                          boolean isLogRequestHeaders,
-                          boolean isLogResponseHeaders) {
-        this.level = level;
-        this.isLogRequestHeaders = isLogRequestHeaders;
-        this.isLogResponseHeaders = isLogResponseHeaders;
-    }
-
-    public LogInterceptor(Level level) {
-        this(level, true, false);
-    }
+    private Set<Integer> mLogPartList;
 
     public LogInterceptor() {
-        this(Level.BOTH);
+        mLogPartList = new HashSet<>();
+        mLogPartList.add(REQ_BODY);
+        mLogPartList.add(REQ_HEADERS);
+        mLogPartList.add(RESP_BODY);
+        mLogPartList.add(RESP_HEADERS);
+    }
+
+    public LogInterceptor exclude(Integer... parts) {
+        for (Integer part : parts) {
+            mLogPartList.remove(part);
+        }
+        return this;
     }
 
     private void log(String msg) {
-        Log.i(TAG + ApiRequest.NET_TAG, msg);
+        LogUtils.i(TAG + XHttp.NET_TAG, msg);
+    }
+
+    private boolean isLogPart(int part) {
+        return mLogPartList.contains(part);
+    }
+
+
+    @Override
+    protected Request proceedRequest(Request request) {
+        try {
+            logRequest(request);
+        } catch (Exception e) {
+            LogUtils.e(e);
+        }
+        return super.proceedRequest(request);
     }
 
     @Override
-    public Response intercept(@NonNull Chain chain) throws IOException {
-        Request request = chain.request();
-        if (level == Level.NONE) {
-            return chain.proceed(request);
-        }
-        if (level == Level.BOTH || level == Level.REQUEST)
-            logRequest(request);
-
-        Response response;
+    protected Response proceedResponse(Response response) {
         try {
-            response = chain.proceed(request);
-        } catch (Exception e) {
-            log("请求失败 msg = " + e.getMessage());
-            throw e;
-        }
-        if (level == Level.BOTH || level == Level.RESPONSE)
             logResponse(response);
-        return response;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return super.proceedResponse(response);
     }
 
+
+    // 打印 response
     private void logResponse(Response response) throws IOException {
-        log("=============================== Response Start =======================================================\n");
-        long startNs = System.nanoTime();
-        long tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
-        ResponseBody responseBody = response.body();
-        log(" [" + response.request().method() + "] " + response.request().url());
-        log("Cost:" + tookMs + "ms ,code = " + response.code() + " ,msg = " + response.message());
-        // headers
-        if (isLogResponseHeaders) {
+        if (response == null || !isLogPart(RESP_BODY) && !isLogPart(RESP_HEADERS)) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n=============================== Response Start =======================================================\n");
+        long tookMs = 0;//TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+        sb.append("[ ").append(response.request().method()).append(" ]  ").append(response.request().url()).append("\n");
+        sb.append("Cost:").append(tookMs).append("ms ,code = ").append(response.code())
+                .append(" ,msg = ").append(response.message()).append("\n");
+        if (isLogPart(RESP_HEADERS)) {
             Headers headers = response.headers();
             for (int i = 0, count = headers.size(); i < count; i++) {
-                log("headers:[ " + headers.name(i) + ": " + headers.value(i) + " ]");
+                sb.append("headers:[ ").append(headers.name(i)).append(": ").append(headers.value(i)).append(" ]").append("\n");
             }
         }
 
-        String body = "Response Body: ";
-        if (responseBody == null) {
-            body = body + "无";
-        } else {
-            long contentLength = responseBody.contentLength();
-            String bodySize = contentLength != -1 ? contentLength + "-byte" : "unknown-length";
-            log("body size = " + bodySize);
-            BufferedSource source = responseBody.source();
-            source.request(Long.MAX_VALUE); // Buffer the entire body.
-            Buffer buffer = source.buffer();
-            Charset charset = UTF8;
-            MediaType contentType = responseBody.contentType();
-            if (contentType != null) {
-                charset = contentType.charset(UTF8);
-            }
-            if (!isPlaintext(buffer)) {
-                body = body + "不可读的 body, size = " + buffer.size() + "-byte";
-            } else if (contentLength != 0 && charset != null) {
-                body = body + buffer.clone().readString(charset);
+        if (isLogPart(RESP_BODY)) {
+            ResponseBody responseBody = response.body();
+            if (responseBody == null) {
+                sb.append("无");
+            } else {
+                BufferedSource source = responseBody.source();
+                source.request(Long.MAX_VALUE); // Buffer the entire body.
+                Buffer buffer = source.buffer();
+
+                Charset charset = UTF8;
+                MediaType contentType = responseBody.contentType();
+                if (contentType != null) {
+                    charset = contentType.charset(UTF8);
+                }
+                if (!isPlaintext(buffer)) {
+                    sb.append("binary size = ").append(buffer.size()).append(" -byte");
+                } else if (responseBody.contentLength() != 0) {
+                    sb.append(buffer.clone().readString(charset == null ? Charset.forName("utf-8") : charset));
+                }
             }
         }
-        log(body);
-        log("=============================== Response End =======================================================\n");
+        sb.append("\n=============================== Response End =======================================================\n");
+        log(sb.toString());
     }
 
 
-    private void logRequest(Request request) throws IOException {
-        log("=============================== Request Start =======================================================\n");
-        log("[ " + request.method() + " ], url = " + request.url());
+    // 打印 request
+    private void logRequest(Request request) throws Exception {
+        if (request == null || !isLogPart(REQ_HEADERS) && !isLogPart(REQ_BODY)) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n=============================== Request Start =======================================================\n");
+        sb.append("[ ").append(request.method()).append(" ], url = ").append(request.url()).append("\n");
         Headers headers = request.headers();
-        if (isLogRequestHeaders) {
+        if (isLogPart(REQ_HEADERS)) {
             for (int i = 0, count = headers.size(); i < count; i++) {
                 String name = headers.name(i);
-                log("headers:[ " + name + ": " + headers.value(i) + " ]");
+                sb.append("headers:[ ").append(name).append(": ").append(headers.value(i)).append(" ]").append("\n");
             }
         }
 
-        String body = "Request Body: ";
-        RequestBody requestBody = request.body();
-        if (requestBody == null) {
-            body = body + "无";
-        } else {
-            if (isLogRequestHeaders) {
+        if (isLogPart(REQ_BODY)) {
+            sb.append("Request Body: ");
+            RequestBody requestBody = request.body();
+            if (requestBody == null) {
+                sb.append("无");
+            } else {
                 if (requestBody.contentType() != null) {
-                    log("headers:[ " + "Content-Type: " + requestBody.contentType() + " ]");
+                    sb.append("Content-Type: ").append(requestBody.contentType()).append("\n");
                 }
                 if (requestBody.contentLength() != -1) {
-                    log("headers:[ " + "Content-Length: " + requestBody.contentLength() + " ]");
+                    sb.append("Content-Length: ").append(requestBody.contentLength()).append("\n");
+                }
+                Buffer buffer = new Buffer();
+                requestBody.writeTo(buffer);
+                Charset charset = UTF8;
+                MediaType contentType = requestBody.contentType();
+                if (contentType != null) {
+                    charset = contentType.charset(UTF8);
+                }
+                if (isPlaintext(buffer) && charset != null) {
+                    sb.append(buffer.readString(charset));
+                } else {
+                    sb.append("不可读的 body");
                 }
             }
-            Buffer buffer = new Buffer();
-            requestBody.writeTo(buffer);
-            Charset charset = UTF8;
-            MediaType contentType = requestBody.contentType();
-            if (contentType != null) {
-                charset = contentType.charset(UTF8);
-            }
-            if (isPlaintext(buffer) && charset != null) {
-                body = body + buffer.readString(charset);
-            } else {
-                body = body + "不可读的 body";
-            }
         }
-        log(body);
-        log("=============================== Request End ===========================================\n");
+        sb.append("\n=============================== Request End =======================================================\n");
+        log(sb.toString());
     }
 
 

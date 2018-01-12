@@ -1,8 +1,7 @@
 package com.march.xhttp;
 
-import android.support.v4.util.SparseArrayCompat;
 
-import com.babypat.common.Api;
+import android.util.SparseArray;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +17,7 @@ import io.reactivex.internal.disposables.ListCompositeDisposable;
  */
 public class RetrofitManager {
 
-    private static SparseArrayCompat<ListCompositeDisposable> mDisposableMap = new SparseArrayCompat<>();
+    private static SparseArray<ListCompositeDisposable> mDisposableMap = new SparseArray<>();
 
     // 统一管理所有请求 - 添加请求
     public static void addRequest(int tag, Disposable disposable) {
@@ -44,13 +43,5 @@ public class RetrofitManager {
         for (int i = 0; i < mDisposableMap.size(); i++) {
             cancelRequest(mDisposableMap.keyAt(i));
         }
-    }
-
-    // 创建请求需要的 header
-    public static Map<String, String> getHeadersMap() {
-        Map<String, String> headers = new HashMap<>();
-        headers.putAll(Api.initCommonHeader());
-        headers.putAll(Api.initAuthHeader());
-        return headers;
     }
 }
