@@ -5,6 +5,8 @@ import com.google.gson.Gson;
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import com.march.xhttp.converts.EasyRespConvertFactory;
 import com.march.xhttp.converts.StringConvertFactory;
+import com.march.xhttp.cookie.CookieJarImpl;
+import com.march.xhttp.cookie.CookieStoreImpl;
 import com.march.xhttp.examples.TokenAuthenticator;
 import com.march.xhttp.interceptor.BaseUrlInterceptor;
 import com.march.xhttp.interceptor.HeaderInterceptor;
@@ -12,13 +14,21 @@ import com.march.xhttp.interceptor.LogInterceptor;
 import com.march.xhttp.interceptor.NetWorkInterceptor;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Observable;
 import io.reactivex.schedulers.Schedulers;
+import okhttp3.Cookie;
+import okhttp3.CookieJar;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Headers;
+import retrofit2.http.Query;
 
 /**
  * CreateAt : 2017/6/30
@@ -54,7 +64,6 @@ public class XHttp {
         return sInst;
     }
 
-
     @SuppressWarnings("unchecked")
     public static <S> S getService(Class<S> serviceClz) {
         try {
@@ -64,6 +73,7 @@ public class XHttp {
             }
             S service = getInst().mRetrofit.create(serviceClz);
             getInst().mServiceMap.put(serviceClz, service);
+
             return service;
         } catch (Exception e) {
             throw new IllegalStateException();
@@ -94,6 +104,8 @@ public class XHttp {
         okHttpBuilder.addInterceptor(new HeaderInterceptor());
         // 进行日志打印，扩展自 HttpLoggingInterceptor
         okHttpBuilder.addInterceptor(new LogInterceptor());
+
+        okHttpBuilder.cookieJar(new CookieJarImpl(new CookieStoreImpl()));
 
         // face book 调试框架
         okHttpBuilder.addNetworkInterceptor(new StethoInterceptor());
