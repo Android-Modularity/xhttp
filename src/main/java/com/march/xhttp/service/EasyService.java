@@ -1,6 +1,7 @@
-package com.march.xhttp;
+package com.march.xhttp.service;
 
 import io.reactivex.Observable;
+import okhttp3.ResponseBody;
 import retrofit2.http.GET;
 import retrofit2.http.Url;
 
@@ -13,6 +14,6 @@ import retrofit2.http.Url;
 public interface EasyService {
 
     @GET
-    Observable<EasyRespBody> download(@Url String url);
+    Observable<ResponseBody> download(@Url String url);
 
 }

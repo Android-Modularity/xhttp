@@ -1,34 +1,30 @@
 package com.march.xhttp;
 
+import android.util.SparseArray;
+
 import com.facebook.stetho.okhttp3.StethoInterceptor;
 import com.google.gson.Gson;
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import com.march.xhttp.converts.EasyRespConvertFactory;
+import com.march.xhttp.config.XHttpConfig;
+import com.march.xhttp.config.XHttpConfigService;
 import com.march.xhttp.converts.StringConvertFactory;
 import com.march.xhttp.cookie.CookieJarImpl;
 import com.march.xhttp.cookie.CookieStoreImpl;
-import com.march.xhttp.examples.TokenAuthenticator;
 import com.march.xhttp.interceptor.BaseUrlInterceptor;
 import com.march.xhttp.interceptor.HeaderInterceptor;
 import com.march.xhttp.interceptor.LogInterceptor;
 import com.march.xhttp.interceptor.NetWorkInterceptor;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.internal.disposables.ListCompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
-import okhttp3.Cookie;
-import okhttp3.CookieJar;
-import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-import retrofit2.http.GET;
-import retrofit2.http.Headers;
-import retrofit2.http.Query;
 
 /**
  * CreateAt : 2017/6/30
@@ -45,34 +41,54 @@ public class XHttp {
     private static XHttp sInst;
 
     private Map<Class, Object> mServiceMap;
+
+    private SparseArray<ListCompositeDisposable> mDisposableMap;
+
     private OkHttpClient mOkHttpClient;
     private Retrofit mRetrofit;
+
+    private XHttpConfigService mXHttpConfigService;
     private XHttpConfig mXHttpConfig;
 
     public static void init(XHttpConfig xHttpConfig) {
-        sInst = new XHttp(xHttpConfig);
+        sInst = new XHttp(xHttpConfig, null);
     }
 
-    private XHttp(XHttpConfig xHttpConfig) {
-        mXHttpConfig = xHttpConfig;
-        mOkHttpClient = buildOkHttpClient();
-        mRetrofit = buildRetrofit(mOkHttpClient);
-        mServiceMap = new HashMap<>();
+    public static void init(XHttpConfig xHttpConfig, XHttpConfigService service) {
+        sInst = new XHttp(xHttpConfig, service);
     }
 
     public static XHttp getInst() {
         return sInst;
     }
 
+    private XHttp(XHttpConfig xHttpConfig, XHttpConfigService service) {
+        mXHttpConfig = xHttpConfig;
+        mXHttpConfigService = service;
+        mServiceMap = new HashMap<>();
+        mDisposableMap = new SparseArray<>();
+    }
+
+    private void ensureInitClient() {
+        if (mOkHttpClient == null) {
+            mOkHttpClient = buildOkHttpClient();
+        }
+        if (mRetrofit == null) {
+            mRetrofit = buildRetrofit(mOkHttpClient);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public static <S> S getService(Class<S> serviceClz) {
         try {
-            Object apiService = getInst().mServiceMap.get(serviceClz);
+            XHttp inst = getInst();
+            inst.ensureInitClient();
+            Object apiService = inst.mServiceMap.get(serviceClz);
             if (apiService != null) {
                 return (S) apiService;
             }
-            S service = getInst().mRetrofit.create(serviceClz);
-            getInst().mServiceMap.put(serviceClz, service);
+            S service = inst.mRetrofit.create(serviceClz);
+            inst.mServiceMap.put(serviceClz, service);
 
             return service;
         } catch (Exception e) {
@@ -86,32 +102,36 @@ public class XHttp {
      * @return OkHttpClient
      */
     private OkHttpClient buildOkHttpClient() {
-        OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder();
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
         // 连接超时
-        okHttpBuilder.connectTimeout(5 * 1000, TimeUnit.MILLISECONDS);
+        builder.connectTimeout(5 * 1000, TimeUnit.MILLISECONDS);
         // 读超时
-        okHttpBuilder.readTimeout(5 * 1000, TimeUnit.MILLISECONDS);
+        builder.readTimeout(5 * 1000, TimeUnit.MILLISECONDS);
         // 写超时
-        okHttpBuilder.writeTimeout(5 * 1000, TimeUnit.MILLISECONDS);
+        builder.writeTimeout(5 * 1000, TimeUnit.MILLISECONDS);
         // 失败后重试
-        okHttpBuilder.retryOnConnectionFailure(true);
+        builder.retryOnConnectionFailure(true);
 
         // 检查网络
-        okHttpBuilder.addInterceptor(new NetWorkInterceptor(mXHttpConfig.getContext()));
+        builder.addInterceptor(new NetWorkInterceptor(mXHttpConfig.getContext()));
         // 动态 base url
-        okHttpBuilder.addInterceptor(new BaseUrlInterceptor());
+        builder.addInterceptor(new BaseUrlInterceptor());
         // 用来添加全局 Header
-        okHttpBuilder.addInterceptor(new HeaderInterceptor());
+        builder.addInterceptor(new HeaderInterceptor());
         // 进行日志打印，扩展自 HttpLoggingInterceptor
-        okHttpBuilder.addInterceptor(new LogInterceptor());
+        builder.addInterceptor(new LogInterceptor());
 
-        okHttpBuilder.cookieJar(new CookieJarImpl(new CookieStoreImpl()));
+        builder.cookieJar(new CookieJarImpl(new CookieStoreImpl()));
 
         // face book 调试框架
-        okHttpBuilder.addNetworkInterceptor(new StethoInterceptor());
+        builder.addNetworkInterceptor(new StethoInterceptor());
         // token校验，返回 403 时
-        okHttpBuilder.authenticator(new TokenAuthenticator());
-        return okHttpBuilder.build();
+        // builder.authenticator(new TokenAuthenticator());
+
+        if (mXHttpConfigService != null) {
+            mXHttpConfigService.buildOkHttp(builder);
+        }
+        return builder.build();
     }
 
 
@@ -122,26 +142,72 @@ public class XHttp {
      * @return retrofit
      */
     private Retrofit buildRetrofit(OkHttpClient okHttpClient) {
-        final Retrofit.Builder retrofitBuilder = new Retrofit.Builder();
+        final Retrofit.Builder builder = new Retrofit.Builder();
         // client
-        retrofitBuilder.client(okHttpClient);
+        builder.client(okHttpClient);
         // baseUrl
-        retrofitBuilder.baseUrl(mXHttpConfig.getBaseUrl());
+        builder.baseUrl(mXHttpConfig.getBaseUrl());
         // rxJava 调用 adapter
-        retrofitBuilder.addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()));
+        builder.addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()));
 
-        // 转换为 EasyRespBody
-        retrofitBuilder.addConverterFactory(EasyRespConvertFactory.create());
         // 转换为 String
-        retrofitBuilder.addConverterFactory(StringConvertFactory.create());
+        builder.addConverterFactory(StringConvertFactory.create());
         // 转换为 Json Model
-        retrofitBuilder.addConverterFactory(GsonConverterFactory.create(new Gson()));
+        builder.addConverterFactory(GsonConverterFactory.create(new Gson()));
 
-        return retrofitBuilder.build();
+        if (mXHttpConfigService != null) {
+            mXHttpConfigService.buildRetrofit(builder);
+        }
+        return builder.build();
     }
 
 
     public XHttpConfig getXHttpConfig() {
         return mXHttpConfig;
+    }
+
+    //////////////////////////////  -- 请求队列管理 --  //////////////////////////////
+
+    // 添加一个请求
+    public void addRequest(int tag, Disposable disposable) {
+        ListCompositeDisposable disposableContainer = mDisposableMap.get(tag);
+        if (disposableContainer == null) {
+            disposableContainer = new ListCompositeDisposable();
+            mDisposableMap.put(tag, disposableContainer);
+        }
+        disposableContainer.add(disposable);
+    }
+
+    // 删除一个请求成功或失败的请求
+    public void removeRequest(int tag, Disposable disposable) {
+        ListCompositeDisposable disposableContainer = mDisposableMap.get(tag);
+        if (!disposable.isDisposed()) {
+            disposable.dispose();
+        }
+        disposableContainer.delete(disposable);
+    }
+
+    // 取消指定 tag 的请求
+    public void cancelRequest(int tag) {
+        ListCompositeDisposable disposableContainer = mDisposableMap.get(tag);
+        if (disposableContainer != null) {
+            if (!disposableContainer.isDisposed()) {
+                disposableContainer.dispose();
+            }
+            mDisposableMap.remove(tag);
+        }
+    }
+
+    // 取消所有请求
+    public void cancelAllRequest() {
+        for (int i = 0; i < mDisposableMap.size(); i++) {
+            cancelRequest(mDisposableMap.keyAt(i));
+        }
+    }
+
+
+    @Override
+    public String toString() {
+        return "";
     }
 }

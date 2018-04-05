@@ -124,7 +124,7 @@ public final class LogInterceptor extends AbstractInterceptor {
                 }
             }
         }
-        sb.append("\n=============================== Response End =======================================================\n");
+        sb.append("\n=============================== Response End =======================================================\n\n");
         log(sb.toString());
     }
 
@@ -172,7 +172,7 @@ public final class LogInterceptor extends AbstractInterceptor {
                 }
             }
         }
-        sb.append("\n=============================== Request End =======================================================\n");
+        sb.append("\n=============================== Request End =======================================================\n\n");
         log(sb.toString());
     }
 

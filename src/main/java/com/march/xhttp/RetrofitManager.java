@@ -15,33 +15,8 @@ import io.reactivex.internal.disposables.ListCompositeDisposable;
  *
  * @author chendong
  */
+
 public class RetrofitManager {
 
-    private static SparseArray<ListCompositeDisposable> mDisposableMap = new SparseArray<>();
 
-    // 统一管理所有请求 - 添加请求
-    public static void addRequest(int tag, Disposable disposable) {
-        ListCompositeDisposable disposableContainer = mDisposableMap.get(tag);
-        if (disposableContainer == null) {
-            disposableContainer = new ListCompositeDisposable();
-            mDisposableMap.put(tag, disposableContainer);
-        }
-        disposableContainer.add(disposable);
-    }
-
-    // 统一管理所有请求 - 取消请求
-    public static void cancelRequest(int tag) {
-        ListCompositeDisposable disposableContainer = mDisposableMap.get(tag);
-        if (disposableContainer != null) {
-            disposableContainer.dispose();
-            mDisposableMap.remove(tag);
-        }
-    }
-
-    // 统一管理所有请求 - 取消所有请求
-    public static void cancelAllRequest() {
-        for (int i = 0; i < mDisposableMap.size(); i++) {
-            cancelRequest(mDisposableMap.keyAt(i));
-        }
-    }
 }

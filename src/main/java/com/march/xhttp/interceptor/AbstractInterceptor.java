@@ -19,12 +19,7 @@ public abstract class AbstractInterceptor implements Interceptor {
 
     @Override
     public Response intercept(Chain chain) throws IOException {
-        try {
-            return proceedResponse(chain.proceed(proceedRequest(chain.request())));
-        } catch (Exception e) {
-            LogUtils.e(e);
-        }
-        return chain.proceed(chain.request());
+        return proceedResponse(chain.proceed(proceedRequest(chain.request())));
     }
 
     protected @NonNull

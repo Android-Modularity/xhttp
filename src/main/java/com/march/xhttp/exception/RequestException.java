@@ -31,9 +31,7 @@ public class RequestException extends RuntimeException {
         return mErrorCode;
     }
 
-
     public String getMsg() {
         return msg;
     }
-
 }
