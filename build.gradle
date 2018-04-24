@@ -1,25 +1,29 @@
 apply plugin: 'com.android.library'
 
-android {
-    compileSdkVersion 26
+// project/build.gradle
+// apply from: 'https://coding.net/u/devlab/p/Resource/git/raw/master/android/project.gradle'
+def libs = rootProject.ext.libs
+def version = rootProject.ext.version
 
+android {
+    compileSdkVersion version.compileSdkVersion
 }
 
 dependencies {
-    api rootProject.ext.libs.okhttp3
-    implementation rootProject.ext.libs.logging_interceptor
+    api libs.okhttp3
+    implementation libs.logging_interceptor
     // 调试工具类库
-    implementation rootProject.ext.libs.stetho
-    implementation rootProject.ext.libs.stetho_okhttp3
+    implementation libs.stetho
+    implementation libs.stetho_okhttp3
     // json解析
-    implementation rootProject.ext.libs.gson
+    implementation libs.gson
     // 网络请求 retrofit
-    api rootProject.ext.libs.retrofit
-    implementation rootProject.ext.libs.converter_gson
-    implementation rootProject.ext.libs.adapter_rxjava2
+    api libs.retrofit
+    implementation libs.converter_gson
+    implementation libs.adapter_rxjava2
     // rx
-    api rootProject.ext.libs.rxjava2
-    api rootProject.ext.libs.rxandroid
+    api libs.rxjava2
+    api libs.rxandroid
 
     implementation project(':common')
 }

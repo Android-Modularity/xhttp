@@ -30,7 +30,7 @@ public class BaseObserver<T> implements Observer<T> {
     @Override
     public void onSubscribe(@NonNull Disposable d) {
         mDisposable = d;
-        XHttp.getInst().addRequest(mContext.hashCode(), mDisposable);
+        XHttp.addRequest(mContext.hashCode(), mDisposable);
     }
 
     @Override
@@ -50,7 +50,7 @@ public class BaseObserver<T> implements Observer<T> {
 
     // onError or onComplete
     public void onFinish() {
-        XHttp.getInst().removeRequest(mContext.hashCode(), mDisposable);
+        XHttp.removeRequest(mContext.hashCode(), mDisposable);
     }
 
 }

@@ -21,7 +21,7 @@ public class BaseUrlInterceptor extends AbstractInterceptor {
         if (CheckUtils.isEmpty(header)) {
             return super.proceedRequest(request);
         }
-        String baseUrl = XHttp.getInst().getXHttpConfig().getBaseUrlMap().get(header);
+        String baseUrl = XHttp.getXHttpConfig().getBaseUrlMap().get(header);
         if (CheckUtils.isEmpty(baseUrl)) {
             return super.proceedRequest(request);
         }

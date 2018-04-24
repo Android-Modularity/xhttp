@@ -58,7 +58,7 @@ public class XHttp {
         sInst = new XHttp(xHttpConfig, service);
     }
 
-    public static XHttp getInst() {
+    private static XHttp getInst() {
         return sInst;
     }
 
@@ -162,25 +162,25 @@ public class XHttp {
     }
 
 
-    public XHttpConfig getXHttpConfig() {
-        return mXHttpConfig;
+    public static XHttpConfig getXHttpConfig() {
+        return getInst().mXHttpConfig;
     }
 
     //////////////////////////////  -- 请求队列管理 --  //////////////////////////////
 
     // 添加一个请求
-    public void addRequest(int tag, Disposable disposable) {
-        ListCompositeDisposable disposableContainer = mDisposableMap.get(tag);
+    public static void addRequest(int tag, Disposable disposable) {
+        ListCompositeDisposable disposableContainer = getInst().mDisposableMap.get(tag);
         if (disposableContainer == null) {
             disposableContainer = new ListCompositeDisposable();
-            mDisposableMap.put(tag, disposableContainer);
+            getInst().mDisposableMap.put(tag, disposableContainer);
         }
         disposableContainer.add(disposable);
     }
 
     // 删除一个请求成功或失败的请求
-    public void removeRequest(int tag, Disposable disposable) {
-        ListCompositeDisposable disposableContainer = mDisposableMap.get(tag);
+    public static void removeRequest(int tag, Disposable disposable) {
+        ListCompositeDisposable disposableContainer = getInst().mDisposableMap.get(tag);
         if (!disposable.isDisposed()) {
             disposable.dispose();
         }
@@ -188,26 +188,20 @@ public class XHttp {
     }
 
     // 取消指定 tag 的请求
-    public void cancelRequest(int tag) {
-        ListCompositeDisposable disposableContainer = mDisposableMap.get(tag);
+    public static void cancelRequest(int tag) {
+        ListCompositeDisposable disposableContainer = getInst().mDisposableMap.get(tag);
         if (disposableContainer != null) {
             if (!disposableContainer.isDisposed()) {
                 disposableContainer.dispose();
             }
-            mDisposableMap.remove(tag);
+            getInst().mDisposableMap.remove(tag);
         }
     }
 
     // 取消所有请求
-    public void cancelAllRequest() {
-        for (int i = 0; i < mDisposableMap.size(); i++) {
-            cancelRequest(mDisposableMap.keyAt(i));
+    public static void cancelAllRequest() {
+        for (int i = 0; i < getInst().mDisposableMap.size(); i++) {
+            cancelRequest(getInst().mDisposableMap.keyAt(i));
         }
-    }
-
-
-    @Override
-    public String toString() {
-        return "";
     }
 }

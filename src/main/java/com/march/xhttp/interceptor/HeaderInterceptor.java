@@ -20,7 +20,7 @@ public final class HeaderInterceptor extends AbstractInterceptor {
     @Override
     public Request proceedRequest(Request request) {
         Request.Builder builder = request.newBuilder();
-        Map<String, String> headers = XHttp.getInst().getXHttpConfig().getHeaders();
+        Map<String, String> headers = XHttp.getXHttpConfig().getHeaders();
         if (CheckUtils.isEmpty(headers)) {
             return super.proceedRequest(request);
         }
