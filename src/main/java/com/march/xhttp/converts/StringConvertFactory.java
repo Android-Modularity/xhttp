@@ -8,6 +8,8 @@ import java.lang.reflect.Type;
 
 import javax.annotation.Nullable;
 
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Converter;
 import retrofit2.Retrofit;
@@ -38,5 +40,20 @@ public final class StringConvertFactory extends Converter.Factory {
             };
         }
         return super.responseBodyConverter(type, annotations, retrofit);
+    }
+
+    @Nullable
+    @Override
+    public Converter<?, RequestBody> requestBodyConverter(Type type, Annotation[] parameterAnnotations, Annotation[] methodAnnotations, Retrofit retrofit) {
+        if (type == String.class) {
+            return new Converter<String, RequestBody>() {
+
+                @Override
+                public RequestBody convert(String value) throws IOException {
+                    return RequestBody.create(MediaType.parse("text/plain"), value);
+                }
+            };
+        }
+        return super.requestBodyConverter(type, parameterAnnotations, methodAnnotations, retrofit);
     }
 }
