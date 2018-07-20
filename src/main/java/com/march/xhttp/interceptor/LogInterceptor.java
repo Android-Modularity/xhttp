@@ -1,6 +1,6 @@
 package com.march.xhttp.interceptor;
 
-import com.march.common.utils.LogUtils;
+import com.march.common.utils.LgUtils;
 import com.march.xhttp.XHttp;
 
 import java.io.EOFException;
@@ -56,7 +56,7 @@ public final class LogInterceptor extends AbstractInterceptor {
     }
 
     private void log(String msg) {
-        LogUtils.i(TAG + XHttp.NET_TAG, msg);
+        LgUtils.i(TAG + XHttp.NET_TAG, msg);
     }
 
     private boolean isLogPart(int part) {
@@ -69,7 +69,7 @@ public final class LogInterceptor extends AbstractInterceptor {
         try {
             logRequest(request);
         } catch (Exception e) {
-            LogUtils.e(e);
+            LgUtils.e(e);
         }
         return super.proceedRequest(request);
     }

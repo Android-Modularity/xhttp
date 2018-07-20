@@ -1,7 +1,5 @@
 package com.march.xhttp.interceptor;
 
-import com.march.common.utils.LogUtils;
-
 import java.io.IOException;
 
 import io.reactivex.annotations.NonNull;

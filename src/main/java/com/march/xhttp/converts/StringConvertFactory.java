@@ -1,6 +1,6 @@
 package com.march.xhttp.converts;
 
-import com.march.common.utils.LogUtils;
+import com.march.common.utils.LgUtils;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -34,7 +34,7 @@ public final class StringConvertFactory extends Converter.Factory {
             return new Converter<ResponseBody, String>() {
                 @Override
                 public String convert(ResponseBody value) throws IOException {
-                    LogUtils.e("use StringConvertFactory");
+                    LgUtils.e("use StringConvertFactory");
                     return value.string();
                 }
             };
