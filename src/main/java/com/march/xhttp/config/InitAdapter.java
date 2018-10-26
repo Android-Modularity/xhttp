@@ -9,7 +9,7 @@ import retrofit2.Retrofit;
  *
  * @author chendong
  */
-public interface XHttpConfigService {
+public interface InitAdapter {
 
     void buildOkHttp(OkHttpClient.Builder builder);
 

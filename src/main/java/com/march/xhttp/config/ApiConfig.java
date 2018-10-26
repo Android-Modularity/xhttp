@@ -18,23 +18,23 @@ import java.util.Map;
  *
  * @author chendong
  */
-public class XHttpConfig {
+public class ApiConfig {
 
     private WeakContext mWeakContext;
     private String baseUrl;
     private Map<String, String> baseUrlMap = new HashMap<>();
     private Map<String, String> headers = new HashMap<>();
 
-    public static XHttpConfig newConfig(Application application){
-        return new XHttpConfig(application);
+    public static ApiConfig newConfig(Application application){
+        return new ApiConfig(application);
     }
 
-    private XHttpConfig(Application application) {
+    private ApiConfig(Application application) {
         mWeakContext = new WeakContext(application);
     }
 
     // 添加通用 baseUrl
-    public XHttpConfig addBaseUrl(String baseUrl) {
+    public ApiConfig addBaseUrl(String baseUrl) {
         if (!CheckUtils.isEmpty(baseUrl)) {
             this.baseUrl = baseUrl;
         }
@@ -42,7 +42,7 @@ public class XHttpConfig {
     }
 
     // 添加多 baseUrl,使用 domain 区分
-    public XHttpConfig addBaseUrl(String domain, String baseUrl) {
+    public ApiConfig addBaseUrl(String domain, String baseUrl) {
         if (!CheckUtils.isAnyEmpty(domain, baseUrl)) {
             this.baseUrlMap.put(domain, baseUrl);
         }
@@ -50,7 +50,7 @@ public class XHttpConfig {
     }
 
     // 添加通用 header
-    public XHttpConfig addHeader(String key, String value) {
+    public ApiConfig addHeader(String key, String value) {
         if (!CheckUtils.isAnyEmpty(key, value)) {
             this.headers.put(key, value);
         }

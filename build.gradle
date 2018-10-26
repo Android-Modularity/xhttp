@@ -1,26 +1,15 @@
-apply plugin: 'com.android.library'
-
-// project/build.gradle
-// apply from: 'https://coding.net/u/devlab/p/Resource/git/raw/master/android/project.gradle'
 def libs = rootProject.ext.libs
-def version = rootProject.ext.version
-
-android {
-    compileSdkVersion version.compileSdkVersion
-}
 
 dependencies {
     api libs.okhttp3
     implementation libs.logging_interceptor
-    // 调试工具类库
-    implementation libs.stetho
-    implementation libs.stetho_okhttp3
     // json解析
     implementation libs.gson
     // 网络请求 retrofit
     api libs.retrofit
     implementation libs.converter_gson
     implementation libs.adapter_rxjava2
+    implementation 'com.github.franmontiel:PersistentCookieJar:v1.0.1'
     // rx
     api libs.rxjava2
     api libs.rxandroid

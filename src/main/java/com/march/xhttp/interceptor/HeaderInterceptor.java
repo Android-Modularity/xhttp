@@ -1,7 +1,7 @@
 package com.march.xhttp.interceptor;
 
 import com.march.common.utils.CheckUtils;
-import com.march.xhttp.XHttp;
+import com.march.xhttp.Api;
 
 import java.util.Map;
 
@@ -20,7 +20,7 @@ public final class HeaderInterceptor extends AbstractInterceptor {
     @Override
     public Request proceedRequest(Request request) {
         Request.Builder builder = request.newBuilder();
-        Map<String, String> headers = XHttp.getXHttpConfig().getHeaders();
+        Map<String, String> headers = Api.getXHttpConfig().getHeaders();
         if (CheckUtils.isEmpty(headers)) {
             return super.proceedRequest(request);
         }

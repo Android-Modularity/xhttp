@@ -22,7 +22,6 @@ import okhttp3.ResponseBody;
  */
 public class RxResp {
 
-
     public static ObservableTransformer<ResponseBody, File> toFile(final File file) {
         return new ObservableTransformer<ResponseBody, File>() {
             @Override

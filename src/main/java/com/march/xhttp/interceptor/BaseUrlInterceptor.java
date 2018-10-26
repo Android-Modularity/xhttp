@@ -1,7 +1,7 @@
 package com.march.xhttp.interceptor;
 
 import com.march.common.utils.CheckUtils;
-import com.march.xhttp.XHttp;
+import com.march.xhttp.Api;
 
 
 import okhttp3.HttpUrl;
@@ -17,11 +17,11 @@ public class BaseUrlInterceptor extends AbstractInterceptor {
 
     @Override
     protected Request proceedRequest(Request request) {
-        String header = request.header(XHttp.DOMAIN_KEY);
+        String header = request.header(Api.DOMAIN_KEY);
         if (CheckUtils.isEmpty(header)) {
             return super.proceedRequest(request);
         }
-        String baseUrl = XHttp.getXHttpConfig().getBaseUrlMap().get(header);
+        String baseUrl = Api.getXHttpConfig().getBaseUrlMap().get(header);
         if (CheckUtils.isEmpty(baseUrl)) {
             return super.proceedRequest(request);
         }

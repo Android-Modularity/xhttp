@@ -2,14 +2,11 @@ package com.march.xhttp;
 
 import android.util.SparseArray;
 
-import com.facebook.stetho.okhttp3.StethoInterceptor;
 import com.google.gson.Gson;
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import com.march.xhttp.config.XHttpConfig;
-import com.march.xhttp.config.XHttpConfigService;
+import com.march.xhttp.config.ApiConfig;
+import com.march.xhttp.config.InitAdapter;
 import com.march.xhttp.converts.StringConvertFactory;
-import com.march.xhttp.cookie.CookieJarImpl;
-import com.march.xhttp.cookie.CookieStoreImpl;
 import com.march.xhttp.interceptor.BaseUrlInterceptor;
 import com.march.xhttp.interceptor.HeaderInterceptor;
 import com.march.xhttp.interceptor.LogInterceptor;
@@ -32,13 +29,14 @@ import retrofit2.converter.gson.GsonConverterFactory;
  *
  * @author chendong
  */
-public class XHttp {
+public class Api {
+
+    public static final String TAG = Api.class.getSimpleName();
 
     public static final String NET_TAG = "|network";
-    public static final String TAG = XHttp.class.getSimpleName();
     public static final String DOMAIN_KEY = "xhttp-domain";
 
-    private static XHttp sInst;
+    private static Api sInst;
 
     private Map<Class, Object> mServiceMap;
 
@@ -47,22 +45,22 @@ public class XHttp {
     private OkHttpClient mOkHttpClient;
     private Retrofit mRetrofit;
 
-    private XHttpConfigService mXHttpConfigService;
-    private XHttpConfig mXHttpConfig;
+    private InitAdapter mXHttpConfigService;
+    private ApiConfig mXHttpConfig;
 
-    public static void init(XHttpConfig xHttpConfig) {
-        sInst = new XHttp(xHttpConfig, null);
+    public static void init(ApiConfig xHttpConfig) {
+        sInst = new Api(xHttpConfig, null);
     }
 
-    public static void init(XHttpConfig xHttpConfig, XHttpConfigService service) {
-        sInst = new XHttp(xHttpConfig, service);
+    public static void init(ApiConfig xHttpConfig, InitAdapter service) {
+        sInst = new Api(xHttpConfig, service);
     }
 
-    private static XHttp getInst() {
+    private static Api getInst() {
         return sInst;
     }
 
-    private XHttp(XHttpConfig xHttpConfig, XHttpConfigService service) {
+    private Api(ApiConfig xHttpConfig, InitAdapter service) {
         mXHttpConfig = xHttpConfig;
         mXHttpConfigService = service;
         mServiceMap = new HashMap<>();
@@ -79,9 +77,9 @@ public class XHttp {
     }
 
     @SuppressWarnings("unchecked")
-    public static <S> S getService(Class<S> serviceClz) {
+    public static <S> S use(Class<S> serviceClz) {
         try {
-            XHttp inst = getInst();
+            Api inst = getInst();
             inst.ensureInitClient();
             Object apiService = inst.mServiceMap.get(serviceClz);
             if (apiService != null) {
@@ -121,10 +119,6 @@ public class XHttp {
         // 进行日志打印，扩展自 HttpLoggingInterceptor
         builder.addInterceptor(new LogInterceptor());
 
-        builder.cookieJar(new CookieJarImpl(new CookieStoreImpl()));
-
-        // face book 调试框架
-        builder.addNetworkInterceptor(new StethoInterceptor());
         // token校验，返回 403 时
         // builder.authenticator(new TokenAuthenticator());
 
@@ -162,7 +156,7 @@ public class XHttp {
     }
 
 
-    public static XHttpConfig getXHttpConfig() {
+    public static ApiConfig getXHttpConfig() {
         return getInst().mXHttpConfig;
     }
 

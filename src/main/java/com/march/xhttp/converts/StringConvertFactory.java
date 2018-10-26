@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-import javax.annotation.Nullable;
-
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -27,7 +25,6 @@ public final class StringConvertFactory extends Converter.Factory {
         return new StringConvertFactory();
     }
 
-    @Nullable
     @Override
     public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
         if (type == String.class) {
@@ -42,7 +39,6 @@ public final class StringConvertFactory extends Converter.Factory {
         return super.responseBodyConverter(type, annotations, retrofit);
     }
 
-    @Nullable
     @Override
     public Converter<?, RequestBody> requestBodyConverter(Type type, Annotation[] parameterAnnotations, Annotation[] methodAnnotations, Retrofit retrofit) {
         if (type == String.class) {
